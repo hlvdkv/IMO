@@ -23,6 +23,7 @@ def read_tsplib(filename):
                 x = float(parts[1])
                 y = float(parts[2])
                 coords.append((x, y))
+
     
     return coords
 
@@ -130,7 +131,7 @@ def greedy_cycle_two_cycles(distance_matrix):
         return (distance_matrix[cycle[i]][v] +
                 distance_matrix[v][cycle[i_next]] -
                 distance_matrix[cycle[i]][cycle[i_next]])
-    
+
     def find_best_insertion(distance_matrix, cycle, v):
         best_cost = float('inf')
         best_idx = None
@@ -163,14 +164,179 @@ def greedy_cycle_two_cycles(distance_matrix):
     return cycle1, cycle2
 
 
+
+#let's go
+def regret_two_cycles(distance_matrix):
+    n = len(distance_matrix)
+
+    if n % 2 == 0:
+        size1 = n // 2
+        size2 = n // 2
+    else:
+        size1 = n // 2 + 1
+        size2 = n // 2
+
+    nodes = list(range(n))
+
+    # losowe wierzchołki
+    random.shuffle(nodes)
+
+    cycle1 = [nodes[0], nodes[1]]
+    cycle2 = [nodes[2], nodes[3]]
+
+    used = set([nodes[0], nodes[1], nodes[2], nodes[3]])
+    remaining = nodes[4:]
+
+    def insertion_cost(distance_matrix, cycle, i, v):
+        """
+        Koszt wstawienia v pomiędzy cycle[i] i cycle[i+1].
+        """
+        ncyc = len(cycle)
+        i_next = (i + 1) % ncyc
+        return (distance_matrix[cycle[i]][v] +
+                distance_matrix[v][cycle[i_next]] -
+                distance_matrix[cycle[i]][cycle[i_next]])
+
+    def find_best_two_insertions(distance_matrix, cycle, v):
+        best_cost = float('inf')
+        scd_best_cost = float('inf')
+        best_idx = None
+        scd_best_idx = None
+        for i in range(len(cycle)):
+            cost = insertion_cost(distance_matrix, cycle, i, v)
+            if cost < scd_best_cost:
+                if cost < best_cost:
+                    scd_best_cost = best_cost
+                    best_cost = cost
+                    best_idx = i
+                    scd_best_idx = best_idx
+                else:
+                    scd_best_cost = cost
+                    scd_best_idx = i
+
+        regret = scd_best_cost - best_cost if scd_best_cost < float('inf') else 0
+
+        return best_cost, best_idx, regret
+
+    best_v, best_cycle, best_idx = None, None, None
+    max_regret = float('-inf')
+    while remaining:
+        best_v, best_cycle, best_idx = None, None, None
+        max_regret = float('-inf')
+        cost1, idx1, regret1 = float('inf'), None, float('-inf')
+        cost2, idx2, regret2 = float('inf'), None, float('-inf')
+
+        for v in remaining:
+            if len(cycle1) < size1:
+                cost1, idx1, regret1 = find_best_two_insertions(distance_matrix, cycle1, v)
+
+            if len(cycle2) < size2:
+                cost2, idx2, regret2 = find_best_two_insertions(distance_matrix, cycle2, v)
+
+            if regret1 > max_regret or (regret1 == max_regret and cost1 < cost2):
+                best_v, best_cycle, best_idx, max_regret = v, cycle1, idx1, regret1
+
+            if regret2 > max_regret or (regret2 == max_regret and cost2 < cost1):
+                best_v, best_cycle, best_idx, max_regret = v, cycle2, idx2, regret2
+
+        if best_v is not None:
+            best_cycle.insert(best_idx + 1, best_v)
+            remaining.remove(best_v)  # Ensure we remove the inserted node
+
+    return cycle1, cycle2
+
+
+def weighted_regret_two_cycles(distance_matrix, wcost = 1, wregret = -1):
+    n = len(distance_matrix)
+
+    if n % 2 == 0:
+        size1 = n // 2
+        size2 = n // 2
+    else:
+        size1 = n // 2 + 1
+        size2 = n // 2
+
+    nodes = list(range(n))
+
+    # losowe wierzchołki
+    random.shuffle(nodes)
+
+    cycle1 = [nodes[0], nodes[1]]
+    cycle2 = [nodes[2], nodes[3]]
+
+    used = set([nodes[0], nodes[1], nodes[2], nodes[3]])
+    remaining = nodes[4:]
+
+    def insertion_cost(distance_matrix, cycle, i, v):
+        """
+        Koszt wstawienia v pomiędzy cycle[i] i cycle[i+1].
+        """
+        ncyc = len(cycle)
+        i_next = (i + 1) % ncyc
+        return (distance_matrix[cycle[i]][v] +
+                distance_matrix[v][cycle[i_next]] -
+                distance_matrix[cycle[i]][cycle[i_next]])
+
+    def find_best_two_insertions(distance_matrix, cycle, v, wcost, wregret):
+        best_cost = float('inf')
+        scd_best_cost = float('inf')
+        best_idx = None
+        scd_best_idx = None
+        for i in range(len(cycle)):
+            cost = insertion_cost(distance_matrix, cycle, i, v)
+            if cost < scd_best_cost:
+                if cost < best_cost:
+                    scd_best_cost = best_cost
+                    best_cost = cost
+                    best_idx = i
+                    scd_best_idx = best_idx
+                else:
+                    scd_best_cost = cost
+                    scd_best_idx = i
+
+        regret = scd_best_cost - best_cost if scd_best_cost < float('inf') else 0
+
+        score = wcost * cost + wregret + regret
+
+        return best_cost, best_idx, regret
+
+    best_v, best_cycle, best_idx = None, None, None
+    max_regret = float('-inf')
+    while remaining:
+        best_v, best_cycle, best_idx = None, None, None
+        max_regret = float('-inf')
+        cost1, idx1, regret1 = float('inf'), None, float('-inf')
+        cost2, idx2, regret2 = float('inf'), None, float('-inf')
+
+        for v in remaining:
+            if len(cycle1) < size1:
+                cost1, idx1, regret1 = find_best_two_insertions(distance_matrix, cycle1, v, wcost, wregret)
+
+            if len(cycle2) < size2:
+                cost2, idx2, regret2 = find_best_two_insertions(distance_matrix, cycle2, v, wcost, wregret)
+
+            if regret1 > max_regret or (regret1 == max_regret and cost1 < cost2):
+                best_v, best_cycle, best_idx, max_regret = v, cycle1, idx1, regret1
+
+            if regret2 > max_regret or (regret2 == max_regret and cost2 < cost1):
+                best_v, best_cycle, best_idx, max_regret = v, cycle2, idx2, regret2
+
+        if best_v is not None:
+            best_cycle.insert(best_idx + 1, best_v)
+            remaining.remove(best_v)  # Ensure we remove the inserted node
+
+    return cycle1, cycle2
+
+
+
 def main():
 
-    filename = "./lab1/kroA200.tsp"
+    filename = "kroA200.tsp"
     coords = read_tsplib(filename)
     
     distance_matrix = compute_distance_matrix(coords)
     n = len(distance_matrix)
-    
+
     # Heurystyka najbliższego sąsiada
     cycle1_nn, cycle2_nn = nearest_neighbor_two_cycles(distance_matrix)
     length1_nn = cycle_length(distance_matrix, cycle1_nn)
@@ -191,6 +357,32 @@ def main():
     total_gc = length1_gc + length2_gc
     
     print("\n== Heurystyka Rozbudowy Cyklu (Greedy Cycle) ==")
+    print("Cykl 1:", cycle1_gc)
+    print("Długość cyklu 1:", length1_gc)
+    print("Cykl 2:", cycle2_gc)
+    print("Długość cyklu 2:", length2_gc)
+    print("Suma długości:", total_gc)
+
+    # Heurystyka rozbudowy cyklu + żal
+    cycle1_gc, cycle2_gc = regret_two_cycles(distance_matrix)
+    length1_gc = cycle_length(distance_matrix, cycle1_gc)
+    length2_gc = cycle_length(distance_matrix, cycle2_gc)
+    total_gc = length1_gc + length2_gc
+
+    print("\n== Heurystyka Żalu (Regret) ==")
+    print("Cykl 1:", cycle1_gc)
+    print("Długość cyklu 1:", length1_gc)
+    print("Cykl 2:", cycle2_gc)
+    print("Długość cyklu 2:", length2_gc)
+    print("Suma długości:", total_gc)
+
+    # Heurystyka rozbudowy cyklu + żal + wagi
+    cycle1_gc, cycle2_gc = weighted_regret_two_cycles(distance_matrix)
+    length1_gc = cycle_length(distance_matrix, cycle1_gc)
+    length2_gc = cycle_length(distance_matrix, cycle2_gc)
+    total_gc = length1_gc + length2_gc
+
+    print("\n== Heurystyka Żalu Ważona (Wighted Regret) ==")
     print("Cykl 1:", cycle1_gc)
     print("Długość cyklu 1:", length1_gc)
     print("Cykl 2:", cycle2_gc)
