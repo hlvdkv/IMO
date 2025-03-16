@@ -298,28 +298,28 @@ def weighted_regret_two_cycles(distance_matrix, wcost = 1, wregret = -1):
 
         score = wcost * cost + wregret + regret
 
-        return best_cost, best_idx, regret
+        return best_cost, best_idx, score
 
     best_v, best_cycle, best_idx = None, None, None
-    max_regret = float('-inf')
+    max_score = float('-inf')
     while remaining:
         best_v, best_cycle, best_idx = None, None, None
-        max_regret = float('-inf')
-        cost1, idx1, regret1 = float('inf'), None, float('-inf')
-        cost2, idx2, regret2 = float('inf'), None, float('-inf')
+        max_score = float('-inf')
+        cost1, idx1, score1 = float('inf'), None, float('-inf')
+        cost2, idx2, score2 = float('inf'), None, float('-inf')
 
         for v in remaining:
             if len(cycle1) < size1:
-                cost1, idx1, regret1 = find_best_two_insertions(distance_matrix, cycle1, v, wcost, wregret)
+                cost1, idx1, score1 = find_best_two_insertions(distance_matrix, cycle1, v, wcost, wregret)
 
             if len(cycle2) < size2:
-                cost2, idx2, regret2 = find_best_two_insertions(distance_matrix, cycle2, v, wcost, wregret)
+                cost2, idx2, score2 = find_best_two_insertions(distance_matrix, cycle2, v, wcost, wregret)
 
-            if regret1 > max_regret or (regret1 == max_regret and cost1 < cost2):
-                best_v, best_cycle, best_idx, max_regret = v, cycle1, idx1, regret1
+            if score1 > max_score or (score1 == max_score and cost1 < cost2):
+                best_v, best_cycle, best_idx, max_score = v, cycle1, idx1, score1
 
-            if regret2 > max_regret or (regret2 == max_regret and cost2 < cost1):
-                best_v, best_cycle, best_idx, max_regret = v, cycle2, idx2, regret2
+            if score2 > max_score or (score2 == max_score and cost2 < cost1):
+                best_v, best_cycle, best_idx, max_score = v, cycle2, idx2, score2
 
         if best_v is not None:
             best_cycle.insert(best_idx + 1, best_v)
