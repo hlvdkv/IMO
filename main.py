@@ -348,13 +348,43 @@ def drawCycles(coords, cycle1, cycle2, title=""):
     plt.grid(True)
     plt.show()
 
+def greedy_vertice_regret(distance_matrix, cycle1, cycle2):
 
-def main():
+    improved = True
+    while improved:
+        improved = False
+        print("hehehe")
+        l1 = cycle_length(distance_matrix, cycle1)
+        l2 = cycle_length(distance_matrix, cycle2)
+        for i in range(len(cycle1)):
+            for j in range(len(cycle2)):
+                test_cycle1 = cycle1.copy()
+                test_cycle2 = cycle2.copy()
+                test_cycle1[i] = cycle2[j]
+                test_cycle2[j] = cycle1[i]
+                tl1 = cycle_length(distance_matrix, test_cycle1)
+                tl2 = cycle_length(distance_matrix, test_cycle2)
+                if tl2+tl1 < l1+l2:
+                    cycle1 = test_cycle1
+                    cycle2 = test_cycle2
+                    improved = True
+                    break
+            if improved:
 
+                break
+
+    return cycle1, cycle2
+
+
+
+
+
+
+def lab1():
     # Dla instancji kroA200.tsp
     filename = "kroA200.tsp"
     coords = read_tsplib(filename)
-    
+
     distance_matrix = compute_distance_matrix(coords)
     n = len(distance_matrix)
 
@@ -367,7 +397,7 @@ def main():
     wr = []
     wr_results = []
 
-    for _ in range (100):
+    for _ in range(100):
         # Heurystyka najbliższego sąsiada
         cycle1_nn, cycle2_nn = nearest_neighbor_two_cycles(distance_matrix)
         length1_nn = cycle_length(distance_matrix, cycle1_nn)
@@ -375,7 +405,7 @@ def main():
         total_nn = length1_nn + length2_nn
         nn.append(total_nn)
         nn_results.append((total_nn, cycle1_nn, cycle2_nn))
-        
+
         # Heurystyka rozbudowy cyklu
         cycle1_gc, cycle2_gc = greedy_cycle_two_cycles(distance_matrix)
         length1_gc = cycle_length(distance_matrix, cycle1_gc)
@@ -383,7 +413,7 @@ def main():
         total_gc = length1_gc + length2_gc
         gc.append(total_gc)
         gc_results.append((total_gc, cycle1_gc, cycle2_gc))
-        
+
         # Heurystyka rozbudowy cyklu + żal
         cycle1_r, cycle2_r = regret_two_cycles(distance_matrix)
         length1_r = cycle_length(distance_matrix, cycle1_r)
@@ -391,7 +421,7 @@ def main():
         total_r = length1_r + length2_r
         r.append(total_r)
         r_results.append((total_r, cycle1_r, cycle2_r))
-        
+
         # Heurystyka rozbudowy cyklu + żal + wagi
         cycle1_wr, cycle2_wr = weighted_regret_two_cycles(distance_matrix)
         length1_wr = cycle_length(distance_matrix, cycle1_wr)
@@ -401,28 +431,28 @@ def main():
         wr_results.append((total_wr, cycle1_wr, cycle2_wr))
 
     print("KroA200:")
-    print("Nearest Neighbor: min =", min(nn), "mean =", sum(nn)/len(nn), "max =", max(nn))
-    print("Greedy Cycle: min =", min(gc), "mean =", sum(gc)/len(gc), "max =", max(gc))
-    print("Regret: min =", min(r), "mean =", sum(r)/len(r), "max =", max(r))
-    print("Weighted Regret: min =", min(wr), "mean =", sum(wr)/len(wr), "max =", max(wr))
+    print("Nearest Neighbor: min =", min(nn), "mean =", sum(nn) / len(nn), "max =", max(nn))
+    print("Greedy Cycle: min =", min(gc), "mean =", sum(gc) / len(gc), "max =", max(gc))
+    print("Regret: min =", min(r), "mean =", sum(r) / len(r), "max =", max(r))
+    print("Weighted Regret: min =", min(wr), "mean =", sum(wr) / len(wr), "max =", max(wr))
 
     # Wizualizacja dla najlepszych (najkrótszych) dróg instancji kroA200:
     best_nn = min(nn_results, key=lambda x: x[0])
-    drawCycles(coords, best_nn[1], best_nn[2], title="kroA200 - Nearest Neighbor, droga = " + str(best_nn[0]))
-    
+    # drawCycles(coords, best_nn[1], best_nn[2], title="kroA200 - Nearest Neighbor, droga = " + str(best_nn[0]))
+
     best_gc = min(gc_results, key=lambda x: x[0])
     drawCycles(coords, best_gc[1], best_gc[2], title="kroA200 - Greedy Cycle, droga = " + str(best_gc[0]))
-    
+
     best_r = min(r_results, key=lambda x: x[0])
     drawCycles(coords, best_r[1], best_r[2], title="kroA200 - Regret, droga = " + str(best_r[0]))
-    
+
     best_wr = min(wr_results, key=lambda x: x[0])
     drawCycles(coords, best_wr[1], best_wr[2], title="kroA200 - Weighted Regret, droga = " + str(best_wr[0]))
 
     # Dla instancji kroB200.tsp
     filename = "kroB200.tsp"
     coords = read_tsplib(filename)
-    
+
     distance_matrix = compute_distance_matrix(coords)
     n = len(distance_matrix)
 
@@ -435,7 +465,7 @@ def main():
     wr = []
     wr_results = []
 
-    for _ in range (100):
+    for _ in range(100):
         # Heurystyka najbliższego sąsiada
         cycle1_nn, cycle2_nn = nearest_neighbor_two_cycles(distance_matrix)
         length1_nn = cycle_length(distance_matrix, cycle1_nn)
@@ -443,7 +473,7 @@ def main():
         total_nn = length1_nn + length2_nn
         nn.append(total_nn)
         nn_results.append((total_nn, cycle1_nn, cycle2_nn))
-        
+
         # Heurystyka rozbudowy cyklu
         cycle1_gc, cycle2_gc = greedy_cycle_two_cycles(distance_matrix)
         length1_gc = cycle_length(distance_matrix, cycle1_gc)
@@ -451,7 +481,7 @@ def main():
         total_gc = length1_gc + length2_gc
         gc.append(total_gc)
         gc_results.append((total_gc, cycle1_gc, cycle2_gc))
-        
+
         # Heurystyka rozbudowy cyklu + żal
         cycle1_r, cycle2_r = regret_two_cycles(distance_matrix)
         length1_r = cycle_length(distance_matrix, cycle1_r)
@@ -459,7 +489,7 @@ def main():
         total_r = length1_r + length2_r
         r.append(total_r)
         r_results.append((total_r, cycle1_r, cycle2_r))
-        
+
         # Heurystyka rozbudowy cyklu + żal + wagi
         cycle1_wr, cycle2_wr = weighted_regret_two_cycles(distance_matrix)
         length1_wr = cycle_length(distance_matrix, cycle1_wr)
@@ -469,23 +499,73 @@ def main():
         wr_results.append((total_wr, cycle1_wr, cycle2_wr))
 
     print("KroB200:")
-    print("Nearest Neighbor: min =", min(nn), "mean =", sum(nn)/len(nn), "max =", max(nn))
-    print("Greedy Cycle: min =", min(gc), "mean =", sum(gc)/len(gc), "max =", max(gc))
-    print("Regret: min =", min(r), "mean =", sum(r)/len(r), "max =", max(r))
-    print("Weighted Regret: min =", min(wr), "mean =", sum(wr)/len(wr), "max =", max(wr))
+    print("Nearest Neighbor: min =", min(nn), "mean =", sum(nn) / len(nn), "max =", max(nn))
+    print("Greedy Cycle: min =", min(gc), "mean =", sum(gc) / len(gc), "max =", max(gc))
+    print("Regret: min =", min(r), "mean =", sum(r) / len(r), "max =", max(r))
+    print("Weighted Regret: min =", min(wr), "mean =", sum(wr) / len(wr), "max =", max(wr))
 
     # Wizualizacja dla najlepszych (najkrótszych) dróg instancji kroB200:
     best_nn = min(nn_results, key=lambda x: x[0])
-    drawCycles(coords, best_nn[1], best_nn[2], title="kroB200 - Nearest Neighbor, droga = " + str(best_nn[0]))
-    
+    # drawCycles(coords, best_nn[1], best_nn[2], title="kroB200 - Nearest Neighbor, droga = " + str(best_nn[0]))
+
     best_gc = min(gc_results, key=lambda x: x[0])
     drawCycles(coords, best_gc[1], best_gc[2], title="kroB200 - Greedy Cycle, droga = " + str(best_gc[0]))
-    
+
     best_r = min(r_results, key=lambda x: x[0])
     drawCycles(coords, best_r[1], best_r[2], title="kroB200 - Regret, droga = " + str(best_r[0]))
-    
+
     best_wr = min(wr_results, key=lambda x: x[0])
     drawCycles(coords, best_wr[1], best_wr[2], title="kroB200 - Weighted Regret, droga = " + str(best_wr[0]))
+
+
+
+
+def main():
+    # Dla instancji kroA200.tsp
+    filename = "kroA200.tsp"
+    coords = read_tsplib(filename)
+
+    distance_matrix = compute_distance_matrix(coords)
+    n = len(distance_matrix)
+
+    nn = []
+    nn_results = []
+    gvr = []
+    gvr_results = []
+    gc = []
+    gc_results = []
+    r = []
+    r_results = []
+    wr = []
+    wr_results = []
+
+    for _ in range(1):
+        # Heurystyka najbliższego sąsiada
+        cycle1_nn, cycle2_nn = regret_two_cycles(distance_matrix)
+        cycle1_gvr, cycle2_gvr = greedy_vertice_regret(distance_matrix, cycle1_nn, cycle2_nn)
+
+        length1_gvr = cycle_length(distance_matrix, cycle1_gvr)
+        length2_gvr = cycle_length(distance_matrix, cycle2_gvr)
+        total_gvr = length1_gvr + length2_gvr
+        gvr.append(total_gvr)
+        gvr_results.append((total_gvr, cycle1_gvr, cycle2_gvr))
+
+        length1_nn = cycle_length(distance_matrix, cycle1_nn)
+        length2_nn = cycle_length(distance_matrix, cycle2_nn)
+        total_nn = length1_nn + length2_nn
+        nn.append(total_nn)
+        nn_results.append((total_nn, cycle1_nn, cycle2_nn))
+
+    best_nn = min(nn_results, key=lambda x: x[0])
+    drawCycles(coords, best_nn[1], best_nn[2], title="kroB200 - Nearest Neighbor, droga = " + str(best_nn[0]))
+
+    best_gvr = min(gvr_results, key=lambda x: x[0])
+    drawCycles(coords, best_gvr[1], best_gvr[2], title="kroA200 - Greedy Vertice Regret, droga = " + str(best_gvr[0]))
+
+    print("Regret: min =", min(nn), "mean =", sum(nn) / len(nn), "max =", max(nn))
+    print("Greedy vertice regret: min =", min(gvr), "mean =", sum(gvr) / len(gvr), "max =", max(gvr))
+
+
 
 
 if __name__ == "__main__":
