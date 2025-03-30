@@ -376,40 +376,6 @@ def greedy_vertice_regret(distance_matrix, cycle1, cycle2):
 
     return cycle1, cycle2
 
-
-def greedy_inner_regret1(distance_matrix, cycle1, cycle2):
-
-    improved = True
-    while improved:
-        improved = False
-        l1 = cycle_length(distance_matrix, cycle1)
-        l2 = cycle_length(distance_matrix, cycle2)
-        for i in range(len(cycle1)):
-            for j in range(len(cycle1)):
-                test_cycle1 = cycle1.copy()
-                test_cycle1[i], test_cycle1[j] = test_cycle1[j], test_cycle1[i]
-                tl1 = cycle_length(distance_matrix, test_cycle1)
-                if tl1 < l1:
-                    cycle1 = test_cycle1
-                    improved = True
-                    break
-            if improved:
-                break
-        for i in range(len(cycle2)):
-            for j in range(len(cycle2)):
-                test_cycle2 = cycle2.copy()
-                test_cycle2[i], test_cycle2[j] = test_cycle2[j], test_cycle2[i]
-                tl2 = cycle_length(distance_matrix, test_cycle2)
-                if tl2 < l2:
-                    cycle1 = test_cycle1
-                    improved = True
-                    break
-            if improved:
-                break
-
-    return cycle1, cycle2
-
-
 def greedy_inner_regret(distance_matrix, cycle1, cycle2):
     improved = True
     while improved:
@@ -770,7 +736,7 @@ def lab2(num):
 
 
 def main():
-    lab2(1)
+    lab2(10)
 
 if __name__ == "__main__":
     main()
