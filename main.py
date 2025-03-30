@@ -1,5 +1,7 @@
 import math
 import random
+import time
+
 import matplotlib.pyplot as plt
 
 def read_tsplib(filename):
@@ -353,7 +355,6 @@ def greedy_vertice_regret(distance_matrix, cycle1, cycle2):
     improved = True
     while improved:
         improved = False
-        print("hehehe")
         l1 = cycle_length(distance_matrix, cycle1)
         l2 = cycle_length(distance_matrix, cycle2)
         for i in range(len(cycle1)):
@@ -376,6 +377,108 @@ def greedy_vertice_regret(distance_matrix, cycle1, cycle2):
     return cycle1, cycle2
 
 
+def greedy_inner_regret1(distance_matrix, cycle1, cycle2):
+
+    improved = True
+    while improved:
+        improved = False
+        l1 = cycle_length(distance_matrix, cycle1)
+        l2 = cycle_length(distance_matrix, cycle2)
+        for i in range(len(cycle1)):
+            for j in range(len(cycle1)):
+                test_cycle1 = cycle1.copy()
+                test_cycle1[i], test_cycle1[j] = test_cycle1[j], test_cycle1[i]
+                tl1 = cycle_length(distance_matrix, test_cycle1)
+                if tl1 < l1:
+                    cycle1 = test_cycle1
+                    improved = True
+                    break
+            if improved:
+                break
+        for i in range(len(cycle2)):
+            for j in range(len(cycle2)):
+                test_cycle2 = cycle2.copy()
+                test_cycle2[i], test_cycle2[j] = test_cycle2[j], test_cycle2[i]
+                tl2 = cycle_length(distance_matrix, test_cycle2)
+                if tl2 < l2:
+                    cycle1 = test_cycle1
+                    improved = True
+                    break
+            if improved:
+                break
+
+    return cycle1, cycle2
+
+
+def greedy_inner_regret(distance_matrix, cycle1, cycle2):
+    improved = True
+    while improved:
+        improved = False
+        l1 = cycle_length(distance_matrix, cycle1)
+        l2 = cycle_length(distance_matrix, cycle2)
+
+        indices1 = list(range(len(cycle1)))
+        indices2 = list(range(len(cycle2)))
+
+        random.shuffle(indices1)
+        random.shuffle(indices2)
+
+        for i in indices1:
+            for j in indices1:
+                if i >= j:
+                    continue
+
+                test_cycle1 = cycle1.copy()
+                test_cycle1[i], test_cycle1[j] = test_cycle1[j], test_cycle1[i]
+
+                tl1 = cycle_length(distance_matrix, test_cycle1)
+                if tl1 < l1:
+                    cycle1 = test_cycle1
+                    improved = True
+                    break
+            if improved:
+                break
+
+        for i in indices2:
+            for j in indices2:
+                if i >= j:
+                    continue
+
+                test_cycle2 = cycle2.copy()
+                test_cycle2[i], test_cycle2[j] = test_cycle2[j], test_cycle2[i]
+
+                tl2 = cycle_length(distance_matrix, test_cycle2)
+                if tl2 < l2:
+                    cycle2 = test_cycle2
+                    improved = True
+                    break
+            if improved:
+                break
+
+    return cycle1, cycle2
+
+def random_cycles(distance_matrix):
+    n = len(distance_matrix)
+    cycle1, cycle2 = [], []
+
+    if n % 2 == 0:
+        size1 = n // 2
+        size2 = n // 2
+    else:
+        size1 = n // 2 + 1
+        size2 = n // 2
+
+    nodes = list(range(n))
+
+    # losowe wierzchołki
+    random.shuffle(nodes)
+    for i in range(size1):
+        cycle1.append(nodes[i])
+
+    for i in range(size2):
+        cycle2.append(nodes[size1+i])
+
+    return(cycle1, cycle2)
 
 
 
@@ -517,56 +620,157 @@ def lab1():
     best_wr = min(wr_results, key=lambda x: x[0])
     drawCycles(coords, best_wr[1], best_wr[2], title="kroB200 - Weighted Regret, droga = " + str(best_wr[0]))
 
-
-
-
-def main():
+def lab2(num):
     # Dla instancji kroA200.tsp
-    filename = "kroA200.tsp"
+    filename = "kroB200.tsp"
     coords = read_tsplib(filename)
 
     distance_matrix = compute_distance_matrix(coords)
     n = len(distance_matrix)
 
-    nn = []
-    nn_results = []
-    gvr = []
-    gvr_results = []
-    gc = []
-    gc_results = []
     r = []
     r_results = []
-    wr = []
-    wr_results = []
+    gvr = []
+    gvr_results = []
+    gir = []
+    gir_results = []
+    reg = []
+    reg_results = []
+    gvreg = []
+    gvreg_results = []
+    gireg = []
+    gireg_results = []
 
-    for _ in range(1):
-        # Heurystyka najbliższego sąsiada
-        cycle1_nn, cycle2_nn = regret_two_cycles(distance_matrix)
-        cycle1_gvr, cycle2_gvr = greedy_vertice_regret(distance_matrix, cycle1_nn, cycle2_nn)
+    # Lists for tracking execution times
+    times_r = []
+    times_gvr = []
+    times_gir = []
+    times_reg = []
+    times_gvreg = []
+    times_gireg = []
 
+    for _ in range(num):
+        # Random method
+        start_time = time.time()
+        cycle1_r, cycle2_r = random_cycles(distance_matrix)
+        elapsed_r = time.time() - start_time
+        times_r.append(elapsed_r)
+
+        start_time = time.time()
+        cycle1_gvr, cycle2_gvr = greedy_vertice_regret(distance_matrix, cycle1_r, cycle2_r)
+        elapsed_gvr = time.time() - start_time
+        times_gvr.append(elapsed_gvr)
+
+        start_time = time.time()
+        cycle1_gir, cycle2_gir = greedy_inner_regret(distance_matrix, cycle1_r, cycle2_r)
+        elapsed_gir = time.time() - start_time
+        times_gir.append(elapsed_gir)
+
+        # Regret method
+        start_time = time.time()
+        cycle1_reg, cycle2_reg = weighted_regret_two_cycles(distance_matrix)
+        elapsed_reg = time.time() - start_time
+        times_reg.append(elapsed_reg)
+
+        start_time = time.time()
+        cycle1_gvreg, cycle2_gvreg = greedy_vertice_regret(distance_matrix, cycle1_reg, cycle2_reg)
+        elapsed_gvreg = time.time() - start_time
+        times_gvreg.append(elapsed_gvreg)
+
+        start_time = time.time()
+        cycle1_gireg, cycle2_gireg = greedy_inner_regret(distance_matrix, cycle1_reg, cycle2_reg)
+        elapsed_gireg = time.time() - start_time
+        times_gireg.append(elapsed_gireg)
+
+        print("wykresy in progress")
+
+        # Random-based methods results
         length1_gvr = cycle_length(distance_matrix, cycle1_gvr)
         length2_gvr = cycle_length(distance_matrix, cycle2_gvr)
         total_gvr = length1_gvr + length2_gvr
         gvr.append(total_gvr)
         gvr_results.append((total_gvr, cycle1_gvr, cycle2_gvr))
 
-        length1_nn = cycle_length(distance_matrix, cycle1_nn)
-        length2_nn = cycle_length(distance_matrix, cycle2_nn)
-        total_nn = length1_nn + length2_nn
-        nn.append(total_nn)
-        nn_results.append((total_nn, cycle1_nn, cycle2_nn))
+        length1_gir = cycle_length(distance_matrix, cycle1_gir)
+        length2_gir = cycle_length(distance_matrix, cycle2_gir)
+        total_gir = length1_gir + length2_gir
+        gir.append(total_gir)
+        gir_results.append((total_gir, cycle1_gir, cycle2_gir))
 
-    best_nn = min(nn_results, key=lambda x: x[0])
-    drawCycles(coords, best_nn[1], best_nn[2], title="kroB200 - Nearest Neighbor, droga = " + str(best_nn[0]))
+        length1_r = cycle_length(distance_matrix, cycle1_r)
+        length2_r = cycle_length(distance_matrix, cycle2_r)
+        total_r = length1_r + length2_r
+        r.append(total_r)
+        r_results.append((total_r, cycle1_r, cycle2_r))
+
+        # Regret-based methods results
+        length1_gvreg = cycle_length(distance_matrix, cycle1_gvreg)
+        length2_gvreg = cycle_length(distance_matrix, cycle2_gvreg)
+        total_gvreg = length1_gvreg + length2_gvreg
+        gvreg.append(total_gvreg)
+        gvreg_results.append((total_gvreg, cycle1_gvreg, cycle2_gvreg))
+
+        length1_gireg = cycle_length(distance_matrix, cycle1_gireg)
+        length2_gireg = cycle_length(distance_matrix, cycle2_gireg)
+        total_gireg = length1_gireg + length2_gireg
+        gireg.append(total_gireg)
+        gireg_results.append((total_gireg, cycle1_gireg, cycle2_gireg))
+
+        length1_reg = cycle_length(distance_matrix, cycle1_reg)
+        length2_reg = cycle_length(distance_matrix, cycle2_reg)
+        total_reg = length1_reg + length2_reg
+        reg.append(total_reg)
+        reg_results.append((total_reg, cycle1_reg, cycle2_reg))
+
+
+    print("===LOOP 30====")
+
+    best_nn = min(r_results, key=lambda x: x[0])
+    drawCycles(coords, best_nn[1], best_nn[2], title="kroB200 - Random, droga = " + str(best_nn[0]))
 
     best_gvr = min(gvr_results, key=lambda x: x[0])
-    drawCycles(coords, best_gvr[1], best_gvr[2], title="kroA200 - Greedy Vertice Regret, droga = " + str(best_gvr[0]))
+    drawCycles(coords, best_gvr[1], best_gvr[2], title="kroB200 - Greedy Inter Random, droga = " + str(best_gvr[0]))
 
-    print("Regret: min =", min(nn), "mean =", sum(nn) / len(nn), "max =", max(nn))
-    print("Greedy vertice regret: min =", min(gvr), "mean =", sum(gvr) / len(gvr), "max =", max(gvr))
+    best_gir = min(gir_results, key=lambda x: x[0])
+    drawCycles(coords, best_gir[1], best_gir[2], title="kroB200 - Greedy Inner Random, droga = " + str(best_gir[0]))
+
+    best_nn = min(reg_results, key=lambda x: x[0])
+    drawCycles(coords, best_nn[1], best_nn[2], title="kroB200 - Regret, droga = " + str(best_nn[0]))
+
+    best_gvr = min(gvreg_results, key=lambda x: x[0])
+    drawCycles(coords, best_gvr[1], best_gvr[2], title="kroB200 - Greedy Inter Regret, droga = " + str(best_gvr[0]))
+
+    best_gir = min(gireg_results, key=lambda x: x[0])
+    drawCycles(coords, best_gir[1], best_gir[2], title="kroB200 - Greedy Inner Regret, droga = " + str(best_gir[0]))
+
+    print("Random: min =", min(r), "mean =", sum(r) / len(r), "max =", max(r))
+    print("Greedy vertice random: min =", min(gvr), "mean =", sum(gvr) / len(gvr), "max =", max(gvr))
+    print("Greedy vertice random: min =", min(gir), "mean =", sum(gir) / len(gir), "max =", max(gir))
+    print("Regret: min =", min(reg), "mean =", sum(reg) / len(reg), "max =", max(reg))
+    print("Greedy vertice regret: min =", min(gvreg), "mean =", sum(gvreg) / len(gvreg), "max =", max(gvreg))
+    print("Greedy vertice regret: min =", min(gireg), "mean =", sum(gireg) / len(gireg), "max =", max(gireg))
+
+    # Print statistics
+    print("\n=== Execution Time Statistics ===")
+    print(
+        f"Random cycles: min = {min(times_r):.4f}s, mean = {sum(times_r) / len(times_r):.4f}s, max = {max(times_r):.4f}s")
+    print(
+        f"Greedy Vertice Random: min = {min(times_gvr):.4f}s, mean = {sum(times_gvr) / len(times_gvr):.4f}s, max = {max(times_gvr):.4f}s")
+    print(
+        f"Greedy Inner Random: min = {min(times_gir):.4f}s, mean = {sum(times_gir) / len(times_gir):.4f}s, max = {max(times_gir):.4f}s")
+    print(
+        f"Weighted Regret Cycles: min = {min(times_reg):.4f}s, mean = {sum(times_reg) / len(times_reg):.4f}s, max = {max(times_reg):.4f}s")
+    print(
+        f"Greedy Vertice Regret: min = {min(times_gvreg):.4f}s, mean = {sum(times_gvreg) / len(times_gvreg):.4f}s, max = {max(times_gvreg):.4f}s")
+    print(
+        f"Greedy Inner Regret: min = {min(times_gireg):.4f}s, mean = {sum(times_gireg) / len(times_gireg):.4f}s, max = {max(times_gireg):.4f}s")
 
 
 
+
+
+def main():
+    lab2(1)
 
 if __name__ == "__main__":
     main()
