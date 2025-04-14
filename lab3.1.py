@@ -325,7 +325,7 @@ def local_search_with_lm(distance_matrix, cycle1, cycle2):
         n = len(cycle)
         for i in range(n - 1):
             for j in range(i + 2, n):
-                if (i == 0 and j == n - 1):
+                if (i == 0 and j == n - 1):  # pomiń zamykanie cyklu
                     continue
                 a, b = cycle[i], cycle[(i + 1) % n]
                 c, d = cycle[j], cycle[(j + 1) % n]
@@ -351,27 +351,29 @@ def local_search_with_lm(distance_matrix, cycle1, cycle2):
             current_cycle = cycle1 if which == 1 else cycle2
             n = len(current_cycle)
 
-
             current_edges = set((current_cycle[k], current_cycle[(k + 1) % n]) for k in range(n))
 
             e1, e2 = removed_edges
 
             if e1 in current_edges and e2 in current_edges:
+                # ruch aplikowalny
                 if which == 1:
                     apply_2opt_in_cycle(cycle1, i, j)
                 else:
                     apply_2opt_in_cycle(cycle2, i, j)
                 found = True
                 break
-
-            elif e1[::-1] in current_edges or e2[::-1] in current_edges:
+            elif (e1[::-1] in current_edges or e2[::-1] in current_edges):
+                # jedna z krawędzi w odwróconym kierunku
                 new_LM.append((neg_delta, (move_type, indices, removed_edges)))
             else:
+                # przynajmniej jedna krawędź nie istnieje
                 continue
 
         if not found:
             break
 
+        # Dodaj nowe ruchy po zmianach
         LM = new_LM
         heapq.heapify(LM)
 
@@ -379,6 +381,7 @@ def local_search_with_lm(distance_matrix, cycle1, cycle2):
         add_2opt_moves(cycle2, 2)
 
     return cycle1, cycle2
+
 
 
 
@@ -509,7 +512,7 @@ def print_results_table(experiments):
 
 def main():
     try:
-        filename = "kroA200.tsp"
+        filename = "kroB200.tsp"
         coords = read_tsplib(filename)
         print("Wczytano instancję z", filename)
     except Exception as e:
