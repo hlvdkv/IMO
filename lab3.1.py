@@ -316,128 +316,70 @@ def local_search_steepest(distance_matrix, cycle1, cycle2, use_2opt=False):
 
 # ===================== lab 3 =====================
 
-
-
-class Move:
-    def __init__(self, move_type, indices, delta):
-        self.move_type = move_type
-        self.indices = indices
-        self.delta = delta
-
-    def __lt__(self, other):
-        # Odwrócenie znaku – max heap (najlepszy ruch na górze)
-        return self.delta > other.delta
-
-def is_applicable(move, cycle1, cycle2):
-    # Tu możesz dodać dokładniejsze warunki aplikowalności
-    # np. sprawdzanie krawędzi/kierunków dla TSP – uproszczona wersja:
-    return True  # Załóżmy teraz, że każdy jest aplikowalny – można rozbudować
-
-def apply_move(move, cycle1, cycle2):
-    if move.move_type == "exchange":
-        i, j = move.indices
-        apply_exchange_vertices_between_cycles(cycle1, cycle2, i, j)
-    elif move.move_type == "swap_in_cycle":
-        which, i, j = move.indices
-        if which == 1:
-            apply_swap_vertices_in_cycle(cycle1, i, j)
-        else:
-            apply_swap_vertices_in_cycle(cycle2, i, j)
-    elif move.move_type == "2opt_in_cycle":
-        which, i, j = move.indices
-        if which == 1:
-            apply_2opt_in_cycle(cycle1, i, j)
-        else:
-            apply_2opt_in_cycle(cycle2, i, j)
-
-def local_search_with_lm(distance_matrix, cycle1, cycle2, use_2opt=False):
+def local_search_with_lm(distance_matrix, cycle1, cycle2):
     n1 = len(cycle1)
     n2 = len(cycle2)
     LM = []
 
-    # Inicjalizacja LM (wszystkie poprawiające ruchy)
-    for i in range(n1):
-        for j in range(n2):
-            delta = delta_exchange_vertices_between_cycles_local(distance_matrix, cycle1, cycle2, i, j)
-            if delta > 0:
-                heapq.heappush(LM, Move("exchange", (i, j), delta))
+    def add_2opt_moves(cycle, which):
+        n = len(cycle)
+        for i in range(n - 1):
+            for j in range(i + 2, n):
+                if (i == 0 and j == n - 1):
+                    continue
+                a, b = cycle[i], cycle[(i + 1) % n]
+                c, d = cycle[j], cycle[(j + 1) % n]
+                delta = delta_2opt_in_cycle_local(distance_matrix, cycle, i, j)
+                if delta > 0:
+                    removed_edges = [(a, b), (c, d)]
+                    heapq.heappush(LM, (-delta, ("2opt_in_cycle", (which, i, j), removed_edges)))
 
-    if not use_2opt:
-        for i in range(n1):
-            for j in range(i+1, n1):
-                delta = delta_swap_vertices_in_cycle_local(distance_matrix, cycle1, i, j)
-                if delta > 0:
-                    heapq.heappush(LM, Move("swap_in_cycle", (1, i, j), delta))
-        for i in range(n2):
-            for j in range(i+1, n2):
-                delta = delta_swap_vertices_in_cycle_local(distance_matrix, cycle2, i, j)
-                if delta > 0:
-                    heapq.heappush(LM, Move("swap_in_cycle", (2, i, j), delta))
-    else:
-        for i in range(n1 - 1):
-            for j in range(i + 2, n1):
-                delta = delta_2opt_in_cycle_local(distance_matrix, cycle1, i, j)
-                if delta > 0:
-                    heapq.heappush(LM, Move("2opt_in_cycle", (1, i, j), delta))
-        for i in range(n2 - 1):
-            for j in range(i + 2, n2):
-                delta = delta_2opt_in_cycle_local(distance_matrix, cycle2, i, j)
-                if delta > 0:
-                    heapq.heappush(LM, Move("2opt_in_cycle", (2, i, j), delta))
+    add_2opt_moves(cycle1, 1)
+    add_2opt_moves(cycle2, 2)
 
-    # Główna pętla
     while True:
         found = False
         new_LM = []
 
         while LM:
-            move = heapq.heappop(LM)
-            if is_applicable(move, cycle1, cycle2):
-                apply_move(move, cycle1, cycle2)
+            neg_delta, (move_type, indices, removed_edges) = heapq.heappop(LM)
+
+            if move_type != "2opt_in_cycle":
+                continue
+
+            which, i, j = indices
+            current_cycle = cycle1 if which == 1 else cycle2
+            n = len(current_cycle)
+
+
+            current_edges = set((current_cycle[k], current_cycle[(k + 1) % n]) for k in range(n))
+
+            e1, e2 = removed_edges
+
+            if e1 in current_edges and e2 in current_edges:
+                if which == 1:
+                    apply_2opt_in_cycle(cycle1, i, j)
+                else:
+                    apply_2opt_in_cycle(cycle2, i, j)
                 found = True
                 break
+
+            elif e1[::-1] in current_edges or e2[::-1] in current_edges:
+                new_LM.append((neg_delta, (move_type, indices, removed_edges)))
             else:
-                # Przechowaj na później (może będzie aplikowalny po innym ruchu)
-                new_LM.append(move)
+                continue
 
         if not found:
             break
 
-        # Odśwież LM po wykonanym ruchu – dodaj nowe ruchy
         LM = new_LM
         heapq.heapify(LM)
 
-        # Dodaj nowe ruchy do LM
-        for i in range(n1):
-            for j in range(n2):
-                delta = delta_exchange_vertices_between_cycles_local(distance_matrix, cycle1, cycle2, i, j)
-                if delta > 0:
-                    heapq.heappush(LM, Move("exchange", (i, j), delta))
-
-        if not use_2opt:
-            for i in range(n1):
-                for j in range(i+1, n1):
-                    delta = delta_swap_vertices_in_cycle_local(distance_matrix, cycle1, i, j)
-                    if delta > 0:
-                        heapq.heappush(LM, Move("swap_in_cycle", (1, i, j), delta))
-            for i in range(n2):
-                for j in range(i+1, n2):
-                    delta = delta_swap_vertices_in_cycle_local(distance_matrix, cycle2, i, j)
-                    if delta > 0:
-                        heapq.heappush(LM, Move("swap_in_cycle", (2, i, j), delta))
-        else:
-            for i in range(n1 - 1):
-                for j in range(i + 2, n1):
-                    delta = delta_2opt_in_cycle_local(distance_matrix, cycle1, i, j)
-                    if delta > 0:
-                        heapq.heappush(LM, Move("2opt_in_cycle", (1, i, j), delta))
-            for i in range(n2 - 1):
-                for j in range(i + 2, n2):
-                    delta = delta_2opt_in_cycle_local(distance_matrix, cycle2, i, j)
-                    if delta > 0:
-                        heapq.heappush(LM, Move("2opt_in_cycle", (2, i, j), delta))
+        add_2opt_moves(cycle1, 1)
+        add_2opt_moves(cycle2, 2)
 
     return cycle1, cycle2
+
 
 
 
@@ -535,7 +477,7 @@ def run_experiment(distance_matrix, runs=100):
             start_time = time.time()
 
             if move_type == "lm":
-                final_c1, final_c2 = local_search_with_lm(distance_matrix, c1[:], c2[:], use_2opt=True)
+                final_c1, final_c2 = local_search_with_lm(distance_matrix, c1[:], c2[:])
             else:
                 final_c1, final_c2 = local_search_steepest(distance_matrix, c1[:], c2[:], use_2opt=True)
             elapsed = time.time() - start_time
@@ -574,7 +516,7 @@ def main():
         print("Nie udało się wczytać instancji TSPLIB, używamy przykładowych danych.")
         coords = [(0,0), (10,0), (10,10), (0,10), (5,5)]
     distance_matrix = compute_distance_matrix(coords)
-    runs = 100  # dla testów
+    runs = 1  # dla testów
     experiments = run_experiment(distance_matrix, runs)
     print_results_table(experiments)
     for combo, data in experiments.items():
